@@ -5,8 +5,11 @@
 // Deploy en Vercel y configura la variable de entorno:
 //   ANTHROPIC_API_KEY = sk-ant-...
 
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+
+// Node.js runtime (no edge): permite hasta 60s timeout en Hobby plan
 export const config = {
-  runtime: 'edge',
+  maxDuration: 60,
 };
 
 const SYSTEM_PROMPT = `Eres un analista senior de ventas automotrices de KIA Almotores en Colombia. Tu misión es ayudar a directores y gerentes a entender el desempeño del equipo comercial, diagnosticar oportunidades de mejora y responder preguntas específicas con datos.
@@ -112,17 +115,11 @@ total = s_ventas + s_retomas + s_acc + s_col + s_tr + s_fin
 
 ## TERMINOLOGÍA CORRECTA AL HABLAR DE MÉTRICAS
 
-- "Ventas" / "Unidades facturadas" / "Facturadas" → todas significan lo mismo: unidades_vendidas (campo Cumplimiento o ventas en context)
-- "Matrículas" / "Matriculadas" / "Placas" → todas significan lo mismo: unidades con placa emitida (campo Matriculas, solo aplica a directores)
+- "Ventas" / "Unidades facturadas" / "Facturadas" → todas significan lo mismo: unidades_vendidas
+- "Matrículas" / "Matriculadas" / "Placas" → todas significan lo mismo: unidades con placa emitida (solo aplica a directores)
 - "Cumplimiento" sin más → asume VENTAS facturadas por defecto
 
-Cuando hables del scoring de un director y muestres una tabla:
-- Si la pregunta es genérica o sobre ventas → fila "Cumplimiento ventas" con vMes en facturadas
-- Si la pregunta especifica matrículas → fila "Cumplimiento matrículas" con vMes en matriculadas
-
 ## CÁLCULO PASO A PASO (siempre que el usuario pregunte un score)
-
-Cuando alguien pregunta el porcentaje/score:
 
 **Si es un ASESOR:**
 1. Encuentra el asesor en context.asesores
@@ -134,15 +131,10 @@ Cuando alguien pregunta el porcentaje/score:
 7. ⚠️ Si vMes > 9 → la celda de ventas DEBE pasar de 35%
 
 **Si es un DIRECTOR:**
-1. Identifica el director y suma las ventas/matrículas/metas de todos sus asesores
+1. Identifica el director en context.directores
 2. Decide fórmula B (ventas) o C (matrículas) según el contexto de la pregunta
 3. Para Kethy Cheng aplica el cap al 35%; para los demás permite sobrecumplir
 4. Las 5 métricas restantes se calculan igual con totales del equipo del director
-
-## DIFERENCIA ENTRE PESTAÑAS
-
-- **Director Integral**: cumplimiento medido por UNIDADES FACTURADAS (ventas)
-- **Director Matrículas**: cumplimiento medido por UNIDADES MATRICULADAS (placas emitidas)
 
 ## CÓMO RESPONDER
 
@@ -170,50 +162,40 @@ interface RequestBody {
   context: Record<string, unknown>;
 }
 
-export default async function handler(req: Request): Promise<Response> {
-  // CORS abierto (acceso desde cualquier origen)
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
+// CORS: aplica en TODA respuesta (incluyendo errores) para evitar bloqueo del navegador
+function setCors(res: VercelResponse) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  setCors(res);
 
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders });
+    res.status(204).end();
+    return;
   }
 
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: 'API key no configurada en Vercel' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    res.status(500).json({ error: 'API key no configurada en Vercel' });
+    return;
   }
 
-  let body: RequestBody;
-  try {
-    body = (await req.json()) as RequestBody;
-  } catch {
-    return new Response(JSON.stringify({ error: 'JSON inválido' }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  // Body: Vercel ya lo parsea como JSON por defecto
+  const body = req.body as RequestBody;
+  if (!body || !body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
+    res.status(400).json({ error: 'Falta el campo messages[]' });
+    return;
   }
 
   const { messages, context } = body;
-  if (!messages || !Array.isArray(messages) || messages.length === 0) {
-    return new Response(JSON.stringify({ error: 'Falta el campo messages[]' }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
 
   // Adjuntar contexto al system prompt
   const systemWithContext = `${SYSTEM_PROMPT}
@@ -240,24 +222,18 @@ ${JSON.stringify(context, null, 2)}`;
 
     if (!anthropicRes.ok) {
       const errText = await anthropicRes.text();
-      return new Response(
-        JSON.stringify({ error: 'Error de Anthropic API', details: errText }),
-        { status: anthropicRes.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      res.status(anthropicRes.status).json({ error: 'Error de Anthropic API', details: errText });
+      return;
     }
 
     const data = await anthropicRes.json();
     const reply =
-      data?.content?.map((b: { type: string; text?: string }) => (b.type === 'text' ? b.text : '')).join('\n') || '';
+      (data?.content as Array<{ type: string; text?: string }>)
+        ?.map((b) => (b.type === 'text' ? b.text : ''))
+        .join('\n') || '';
 
-    return new Response(JSON.stringify({ reply }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    res.status(200).json({ reply });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: 'Error interno', details: String(err) }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    res.status(500).json({ error: 'Error interno', details: String(err) });
   }
 }
