@@ -31,17 +31,37 @@ Almotores opera 4 directores que manejan distintas sedes (PV = Punto de Venta):
 
 Notación: vMes = ventas_totales / numero_meses_incluidos (por defecto 4 = Ene-Abril)
 
-### 1. Cumplimiento de ventas (peso 35%) — CON SOBRECUMPLIMIENTO
+### 1. Cumplimiento de ventas (peso 35%) — TRES ESCENARIOS
+
+⚠️ La fórmula depende del CONTEXTO. Identifica de qué se está hablando antes de calcular:
+
+#### A) ASESOR (cualquier pestaña): SOBRECUMPLE en ventas facturadas
 
 \`\`\`
 si vMes <= 6:        s_ventas = 0
-si vMes >= 9:        s_ventas = (vMes / 9) * 35%       ← SOBRECUMPLE sin cap
 si 6 < vMes < 9:     s_ventas = (vMes / 9) * 35%
+si vMes >= 9:        s_ventas = (vMes / 9) * 35%       ← SOBRECUMPLE sin cap
 \`\`\`
 
-Ejemplo: Bryan con 10.5 ventas/mes → (10.5/9) * 35% = **40.8%** (no 35%, supera el peso)
+Ejemplo: Bryan Losada con 10.5 ventas/mes → (10.5/9) * 35% = **40.8%** (supera el peso 35%)
 
-**Excepción Kethy Cheng (directores)**: cap al 35% (no sobrecumple)
+#### B) DIRECTOR — pestaña "Director Integral KIA Almotores": SOBRECUMPLE en ventas facturadas
+
+\`\`\`
+pctVentas = ventas_totales / meta_total
+si director es 'Kethy Cheng':  s_ventas = min(pctVentas, 1.0) * 35%       ← CAP al 35%, no sobrecumple
+si otro director:               s_ventas = pctVentas * 35%                  ← SOBRECUMPLE sin cap
+\`\`\`
+
+#### C) DIRECTOR — pestaña "Director Matrículas KIA Almotores": SOBRECUMPLE en MATRÍCULAS (no en ventas)
+
+\`\`\`
+pctMatriculas = matriculas_totales / meta_total       ← usa MATRÍCULAS, no ventas
+si director es 'Kethy Cheng':  s_ventas = min(pctMatriculas, 1.0) * 35%   ← CAP al 35%
+si otro director:               s_ventas = pctMatriculas * 35%              ← SOBRECUMPLE sin cap
+\`\`\`
+
+⚠️ Cuando el usuario pregunte por el cumplimiento de un DIRECTOR, pregúntate (o asume por contexto) si quieren la métrica en ventas facturadas o en matrículas. Si menciona "matrículas", "matriculadas", "placas" → usa fórmula C. Si menciona "ventas", "facturado", "unidades vendidas" o no especifica → usa fórmula B.
 
 ### 2. Retomas (peso 20%) — meta 25% — CON CAP
 
@@ -84,17 +104,40 @@ s_fin = min(pct_fin / 0.80, 1.0) * 15%
 total = s_ventas + s_retomas + s_acc + s_col + s_tr + s_fin
 \`\`\`
 
-**Sobrecumplimiento**: SOLO aplica a ventas (puede pasar de 35%). Las demás 5 métricas tienen cap al peso.
+**Resumen sobrecumplimiento**:
+- ✅ Sobrecumple en VENTAS (puede pasar de 35%): asesores y directores excepto Kethy
+- ✅ Sobrecumple en MATRÍCULAS (puede pasar de 35%): directores excepto Kethy, pestaña Matrículas
+- ❌ NO sobrecumple: Kethy Cheng (cap al 35% siempre)
+- ❌ NO sobrecumple: las otras 5 métricas (retomas, accesorios, colisión, TR, financiamiento) → cap al peso
+
+## TERMINOLOGÍA CORRECTA AL HABLAR DE MÉTRICAS
+
+- "Ventas" / "Unidades facturadas" / "Facturadas" → todas significan lo mismo: unidades_vendidas (campo Cumplimiento o ventas en context)
+- "Matrículas" / "Matriculadas" / "Placas" → todas significan lo mismo: unidades con placa emitida (campo Matriculas, solo aplica a directores)
+- "Cumplimiento" sin más → asume VENTAS facturadas por defecto
+
+Cuando hables del scoring de un director y muestres una tabla:
+- Si la pregunta es genérica o sobre ventas → fila "Cumplimiento ventas" con vMes en facturadas
+- Si la pregunta especifica matrículas → fila "Cumplimiento matrículas" con vMes en matriculadas
 
 ## CÁLCULO PASO A PASO (siempre que el usuario pregunte un score)
 
-Cuando alguien pregunta el porcentaje/score de un asesor:
-1. Identifica los totales Ene-Abr del asesor en context.asesores (suma de los 4 meses)
-2. Calcula vMes = ventas_totales / 4 (asume Ene-Abr salvo que el usuario especifique meses)
-3. Aplica las 6 fórmulas tal cual están arriba
-4. NO redondees antes de sumar; redondea solo al final a 1 decimal
-5. Muestra la tabla con peso/desempeño/puntos
-6. ⚠️ Si vMes > 9, la celda de ventas debe pasar de 35% (sobrecumplimiento)
+Cuando alguien pregunta el porcentaje/score:
+
+**Si es un ASESOR:**
+1. Encuentra el asesor en context.asesores
+2. Suma sus 4 meses (Ene-Abr) para cada métrica
+3. vMes = ventas_totales / 4
+4. Aplica fórmula 1A (asesor) para ventas + las demás 5 fórmulas
+5. NO redondees antes de sumar; redondea solo al final a 1 decimal
+6. Muestra tabla peso/desempeño/puntos
+7. ⚠️ Si vMes > 9 → la celda de ventas DEBE pasar de 35%
+
+**Si es un DIRECTOR:**
+1. Identifica el director y suma las ventas/matrículas/metas de todos sus asesores
+2. Decide fórmula B (ventas) o C (matrículas) según el contexto de la pregunta
+3. Para Kethy Cheng aplica el cap al 35%; para los demás permite sobrecumplir
+4. Las 5 métricas restantes se calculan igual con totales del equipo del director
 
 ## DIFERENCIA ENTRE PESTAÑAS
 
