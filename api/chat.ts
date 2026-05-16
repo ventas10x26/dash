@@ -28,11 +28,51 @@ Almotores opera 4 directores que manejan distintas sedes (PV = Punto de Venta):
 - Kethy Cheng tiene cap al 100% en cumplimiento de ventas (no sobrecumple); el resto sí
 - Asesores en DEFAULT_EXCLUDED no se cuentan: Gloria Moreno, Milton Diaz, Juan Acuria, Lither Marquez, John Valencia Paredes, Carlos Burbano, Walther Perez, Oscar Caldas
 
-## MODELO DE SCORING (suma 100%) - FÓRMULAS EXACTAS
+## ⚡ SCORING PRE-CALCULADO EN EL CONTEXTO ⚡
 
-⚠️ **CRÍTICO**: Usa estas fórmulas exactas. NO inventes pesos ni metas. NO redondees antes de sumar.
+🚨 **IMPORTANTE**: El contexto que recibes YA INCLUYE el scoring exacto pre-calculado por el frontend. USA esos valores directamente. NO recalcules. NO inventes totales.
 
-Notación: vMes = ventas_totales / numero_meses_incluidos (por defecto 4 = Ene-Abril)
+**Para asesores**, cada entrada en \`context.asesores[i]\` incluye un campo \`scoring\`:
+\`\`\`json
+"scoring": {
+  "vMes": 10.5,
+  "s_ventas": 40.83,
+  "s_retomas": 13.33,
+  "s_accesorios": 5.17,
+  "s_colision": 0.48,
+  "s_todo_riesgo": 2.98,
+  "s_financiamiento": 10.41,
+  "scoring_total": 73.2
+}
+\`\`\`
+
+**Para directores**, cada entrada en \`context.directores[nombre]\` incluye DOS scorings:
+\`\`\`json
+"scoring_ventas":     { ..., "scoring_total": 73.2 },  ← cumplimiento por ventas facturadas
+"scoring_matriculas": { ..., "scoring_total": 68.5 }   ← cumplimiento por matrículas
+\`\`\`
+
+### CÓMO USAR ESTOS VALORES
+
+Cuando muestres una tabla de scoring de un asesor o director:
+1. Lee los valores de \`scoring\` (asesor) o \`scoring_ventas\`/\`scoring_matriculas\` (director) del contexto
+2. Multiplica/redondea SOLO si necesitas presentación visual (ej: 40.83 → "40.8%")
+3. El **Scoring Total** que muestres DEBE ser literalmente el valor de \`scoring_total\` (con 1 decimal). NO lo sumes tú.
+4. Los valores individuales (s_ventas, s_retomas, etc.) ya están listos para mostrar como "puntos" en la tabla.
+
+### VERIFICACIÓN MENTAL
+
+Antes de enviar la respuesta, verifica:
+- El "Scoring Total" que pusiste = \`scoring.scoring_total\` del contexto (con redondeo a 1 decimal)
+- Los 6 valores de la columna "Puntos" = s_ventas, s_retomas, s_accesorios, s_colision, s_todo_riesgo, s_financiamiento
+
+Si NO coinciden, RECALCULA usando los valores del contexto.
+
+---
+
+A continuación, el modelo de scoring se explica para que entiendas POR QUÉ se calculan así, pero recuerda: NO los recalcules manualmente, USA los valores pre-calculados.
+
+
 
 ### 1. Cumplimiento de ventas (peso 35%) — TRES ESCENARIOS
 
