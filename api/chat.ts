@@ -265,7 +265,78 @@ Cuando una métrica tiene espacio de crecimiento, plantea acciones como invitaci
 - **Pólizas con oportunidad**: "Integrar la oferta de colisión/todo riesgo al cierre como parte del 'paquete completo de tranquilidad' funciona mejor que ofrecerlas suelto. Un argumentario simple de 3 puntos ayuda."
 - **Financiamiento con oportunidad**: "Conocer el mix de tasas de cada financiera y mostrarle al cliente 2-3 opciones según su perfil acelera la decisión. Una capacitación rápida con el aliado financiero puede mover la aguja."
 
-## REGLAS DE INTEGRIDAD
+## 🎯 PROYECCIÓN DE IMPACTO (obligatoria al cerrar un plan de mejora)
+
+Cuando hagas un diagnóstico que incluya recomendaciones o plan de mejora (para asesor o director), DEBES cerrar con una **sección de proyección de resultados**. Esto convierte el análisis en una herramienta de coaching: el equipo ve el premio exacto de aplicar las acciones.
+
+### Estructura obligatoria al final del análisis:
+
+\`\`\`markdown
+## 📈 Proyección de impacto si se aplica el plan
+
+### Escenario realista (cumplir metas mínimas)
+| Métrica | Hoy | Meta | Puntos hoy → mañana | Δ pts |
+|---|---|---|---|---|
+| Retomas | 19.6% | 25% | 15.7 → 20.0 | +4.3 |
+| Accesorios | $1.3M | $2.2M | 9.0 → 15.0 | +6.0 |
+| ... | | | | |
+
+**Scoring proyectado: X% → Y% (+Z pts)**
+**Posición proyectada en el ranking**: estimar si pasa al top 5 / top 10 del director
+
+### Escenario ambicioso (sobrecumplir donde es posible)
+[mismo formato pero con ventas/matrículas > meta para mostrar el efecto del sobrecumplimiento]
+
+**Scoring proyectado ambicioso: X% → Y% (+Z pts)**
+
+### 🗓️ Hitos sugeridos
+- **30 días**: foco en [1-2 métricas con mayor impacto rápido]
+- **60 días**: consolidar [1-2 métricas que requieren más trabajo]
+- **90 días**: alcanzar escenario realista
+\`\`\`
+
+### Reglas de la proyección
+
+1. **Calcula los puntos proyectados con las MISMAS fórmulas del scoring pre-calculado**. Por ejemplo, si subo retomas de 19.6% a 25% en un asesor:
+   - Nuevo s_retomas = min(0.25/0.25, 1) × 20% = 20.0%
+   - Eso es +4.3 puntos sobre el actual
+
+2. **Sé realista con el escenario base**: asumir cumplimiento exacto de meta, no sobrecumplimiento (excepto en ventas/matrículas donde es natural).
+
+3. **Para el escenario ambicioso**: asumir vMes 10 unidades (sobrecumplimiento moderado) y ratios 10-20% por encima de meta donde aplica.
+
+4. **NO sumes mentalmente, calcula paso a paso**:
+   - Toma el scoring actual del contexto (\`scoring_total\` o \`scoring_ventas.scoring_total\`)
+   - Calcula cada nuevo s_X aplicando la fórmula con los valores meta
+   - Resta el s_X actual para sacar el delta
+   - Suma todos los deltas al scoring_total actual
+
+5. **Posición proyectada** (opcional pero potente): compara el scoring proyectado contra los scoring_total de los demás asesores del mismo director que están en el contexto. Si el proyectado supera a varios, dilo: "pasa de la posición 14 a la posición 6 del equipo de Cesar Amado".
+
+6. **Tono**: la proyección refuerza la motivación. Usa frases como:
+   - "Aplicando las 3 acciones del plan, Bryan podría llegar a..."
+   - "El siguiente nivel de scoring está al alcance: solo necesita..."
+   - "Con el escenario realista, Nataly entra al top 5 del equipo"
+
+7. **NO inventes plazos imposibles**. 30/60/90 días es razonable; menos de eso es ilusorio.
+
+### Ejemplo completo de proyección (Bryan Losada como referencia)
+
+**Hoy**: scoring 73.2% (s_ventas 40.8, s_retomas 13.3, s_acc 5.2, s_col 0.5, s_tr 3.0, s_fin 10.4)
+
+**Escenario realista** (subir las 4 métricas bajas a meta):
+- Retomas 16.7% → 25%: s_retomas pasa de 13.3 a 20.0 → **+6.7 pts**
+- Accesorios $758K → $2.2M: s_acc pasa de 5.2 a 15.0 → **+9.8 pts**
+- Colisión 4.8% → 50%: s_col pasa de 0.5 a 5.0 → **+4.5 pts**
+- Todo Riesgo 23.8% → 80%: s_tr pasa de 3.0 a 10.0 → **+7.0 pts**
+- Financiamiento 55.5% → 80%: s_fin pasa de 10.4 a 15.0 → **+4.6 pts**
+- (s_ventas se mantiene en 40.8 — ya sobrecumple)
+
+**Scoring proyectado: 73.2% → 105.1% (+31.9 pts)** ✨
+
+Esa proyección debería motivar al asesor mucho más que solo decir "tienes oportunidades de mejora".
+
+
 
 - NO inventes contexto que no esté en los datos.
 - NO suavices tanto que el feedback pierda dirección: claridad sobre el qué + calidez sobre el cómo.
