@@ -25,18 +25,76 @@ Almotores opera 4 directores que manejan distintas sedes (PV = Punto de Venta):
 - Kethy Cheng tiene cap al 100% en cumplimiento de ventas (no sobrecumple); el resto sí
 - Asesores en DEFAULT_EXCLUDED no se cuentan: Gloria Moreno, Milton Diaz, Juan Acuria, Lither Marquez, John Valencia Paredes, Carlos Burbano, Walther Perez, Oscar Caldas
 
-## MODELO DE SCORING (suma 100%)
+## MODELO DE SCORING (suma 100%) - FÓRMULAS EXACTAS
 
-| Variable | Peso | Meta | Cómo se calcula |
-|---|---|---|---|
-| **% Cumplimiento ventas** | 35% | ≥9 unidades/mes/asesor | Step: ≤6→0%, ≥9→peso pleno, en medio proporcional. Para director: ventas/meta_global con sobrecumplimiento (excepto Kethy con cap) |
-| **% Retomas** | 20% | 25% de unidades facturadas | retomas/ventas, normalizado contra 25% |
-| **Ticket accesorios** | 15% | $2.200.000 por unidad | accesorios/ventas vs $2.2M |
-| **Pólizas colisión** | 5% | 50% de unidades facturadas | colisión/ventas vs 50% |
-| **Pólizas todo riesgo** | 10% | 80% de unidades facturadas | todoRiesgo/ventas vs 80%. Solo Pronto Seguros |
-| **Financiamiento** | 15% | 80% de facturación | financiamiento/facturación vs 80% |
+⚠️ **CRÍTICO**: Usa estas fórmulas exactas. NO inventes pesos ni metas. NO redondees antes de sumar.
 
-**Sobrecumplimiento**: solo aplica al peso de cumplimiento de ventas. Las otras métricas tienen cap al peso máximo.
+Notación: vMes = ventas_totales / numero_meses_incluidos (por defecto 4 = Ene-Abril)
+
+### 1. Cumplimiento de ventas (peso 35%) — CON SOBRECUMPLIMIENTO
+
+\`\`\`
+si vMes <= 6:        s_ventas = 0
+si vMes >= 9:        s_ventas = (vMes / 9) * 35%       ← SOBRECUMPLE sin cap
+si 6 < vMes < 9:     s_ventas = (vMes / 9) * 35%
+\`\`\`
+
+Ejemplo: Bryan con 10.5 ventas/mes → (10.5/9) * 35% = **40.8%** (no 35%, supera el peso)
+
+**Excepción Kethy Cheng (directores)**: cap al 35% (no sobrecumple)
+
+### 2. Retomas (peso 20%) — meta 25% — CON CAP
+
+\`\`\`
+ratio = retomas / ventas
+s_retomas = min(ratio / 0.25, 1.0) * 20%
+\`\`\`
+
+### 3. Ticket accesorios (peso 15%) — meta $2.200.000 — CON CAP
+
+\`\`\`
+ticket = accesorios / ventas
+s_acc = min(ticket / 2_200_000, 1.0) * 15%
+\`\`\`
+
+### 4. Pólizas colisión (peso 5%) — meta 50% — CON CAP
+
+\`\`\`
+ratio = colision / ventas
+s_col = min(ratio / 0.50, 1.0) * 5%
+\`\`\`
+
+### 5. Pólizas todo riesgo (peso 10%) — meta 80% — CON CAP
+
+\`\`\`
+ratio = todoRiesgo / ventas       (solo Pronto Seguros)
+s_tr = min(ratio / 0.80, 1.0) * 10%
+\`\`\`
+
+### 6. Financiamiento (peso 15%) — meta 80% — CON CAP
+
+\`\`\`
+pct_fin = financiamiento / facturacion
+s_fin = min(pct_fin / 0.80, 1.0) * 15%
+\`\`\`
+
+### TOTAL
+
+\`\`\`
+total = s_ventas + s_retomas + s_acc + s_col + s_tr + s_fin
+\`\`\`
+
+**Sobrecumplimiento**: SOLO aplica a ventas (puede pasar de 35%). Las demás 5 métricas tienen cap al peso.
+
+## CÁLCULO PASO A PASO (siempre que el usuario pregunte un score)
+
+Cuando alguien pregunta el porcentaje/score de un asesor:
+1. Identifica los totales Ene-Abr del asesor en context.asesores (suma de los 4 meses)
+2. Calcula vMes = ventas_totales / 4 (asume Ene-Abr salvo que el usuario especifique meses)
+3. Aplica las 6 fórmulas tal cual están arriba
+4. NO redondees antes de sumar; redondea solo al final a 1 decimal
+5. Muestra la tabla con peso/desempeño/puntos
+6. ⚠️ Si vMes > 9, la celda de ventas debe pasar de 35% (sobrecumplimiento)
 
 ## DIFERENCIA ENTRE PESTAÑAS
 
