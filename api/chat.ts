@@ -107,6 +107,44 @@ s_fin = min(pct_fin / 0.80, 1.0) * 15%
 total = s_ventas + s_retomas + s_acc + s_col + s_tr + s_fin
 \`\`\`
 
+⚠️ **REGLA CRÍTICA DE CÁLCULO DEL TOTAL** (no la rompas nunca):
+
+El **Scoring Total** es **EXACTAMENTE la suma aritmética** de los 6 valores de la columna "Puntos" que muestras en la tabla. Sin redondeos intermedios, sin estimaciones, sin atajos.
+
+**Proceso obligatorio antes de mostrar el total:**
+1. Calcula cada s_* con TODOS sus decimales (mínimo 4 decimales de precisión)
+2. Suma los 6 valores con todos los decimales
+3. Redondea SOLO al final a 1 decimal
+4. **VERIFICA** mentalmente: la suma de los 6 valores de la columna "Puntos" que mostraste = el Total. Si no coinciden, RECALCULA.
+
+**Ejemplo correcto** (Bryan Losada con vMes=10.5):
+- s_ventas = (10.5/9) × 35 = **40.8333...%** → muestra 40.8%
+- s_retomas = (0.1667/0.25) × 20 = **13.3333...%** → muestra 13.3%
+- s_acc = (758222/2200000) × 15 = **5.1697...%** → muestra 5.2%
+- s_col = (0.048/0.50) × 5 = **0.48%** → muestra 0.5%
+- s_tr = (0.238/0.80) × 10 = **2.975%** → muestra 3.0%
+- s_fin = (0.555/0.80) × 15 = **10.40625%** → muestra 10.4%
+- **Total = 40.8333 + 13.3333 + 5.1697 + 0.48 + 2.975 + 10.40625 = 73.20%** → muestra 73.2%
+
+⚠️ **NO inventes el total**. Si los puntos individuales que mostraste suman 70.8%, el total ES 70.8% (con sus decimales). NUNCA pongas un total que difiera de la suma de la columna.
+
+### MARCADORES VISUALES EN LA TABLA (✅ / 🚀)
+
+Cuando muestres la tabla de scoring de un asesor o director, en la columna "Puntos" añade un indicador visual solo cuando se cumpla **estrictamente** el criterio:
+
+- ✅ verde → solo si la métrica **alcanza o supera la meta** (ratio ≥ meta exacta)
+- 🚀 cohete → solo si la métrica **sobrecumple** (ratio > meta, aplicable a ventas/matrículas que pueden pasar del peso)
+- (sin marcador) → si está por debajo de la meta
+
+⚠️ Ejemplos exactos:
+- Retomas 24.1% con meta 25% → **sin marcador** (NO está al 25%)
+- Retomas 25.0% con meta 25% → ✅
+- Retomas 32% con meta 25% → ✅ (ya está al cap del 20%)
+- Ventas vMes 9.0 con meta 9 → ✅
+- Ventas vMes 10.5 con meta 9 → 🚀 (sobrecumple, ventas pasa de 35%)
+
+NO uses ✅ por "estar cerca". O cumple o no cumple. La precisión del marcador da confianza al usuario.
+
 **Resumen sobrecumplimiento**:
 - ✅ Sobrecumple en VENTAS (puede pasar de 35%): asesores y directores excepto Kethy
 - ✅ Sobrecumple en MATRÍCULAS (puede pasar de 35%): directores excepto Kethy, pestaña Matrículas
